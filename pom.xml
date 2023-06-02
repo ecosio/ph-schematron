@@ -155,6 +155,7 @@
     <module>ph-schematron-validator</module>
     <module>ph-schematron-maven-plugin</module>
     <module>ph-schematron-ant-task</module>
+    <module>ph-schematron-cross-tests</module>
   </modules>
   
   <build>

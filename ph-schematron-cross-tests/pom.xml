@@ -66,21 +66,23 @@
         <dependency>
             <groupId>com.helger.schematron</groupId>
             <artifactId>ph-schematron-api</artifactId>
-            <scope>test</scope>
-        </dependency>
-        <dependency>
-            <groupId>com.helger.schematron</groupId>
-            <artifactId>ph-schematron-testfiles</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.helger.schematron</groupId>
             <artifactId>ph-schematron-xslt</artifactId>
-            <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>com.helger.schematron</groupId>
             <artifactId>ph-schematron-pure</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.helger.schematron</groupId>
+            <artifactId>ph-schematron-schxslt</artifactId>
+        </dependency>
+
+        <dependency>
+            <groupId>com.helger.schematron</groupId>
+            <artifactId>ph-schematron-testfiles</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

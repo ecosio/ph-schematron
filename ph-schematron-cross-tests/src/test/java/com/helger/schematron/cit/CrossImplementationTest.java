@@ -2,24 +2,20 @@ package com.helger.schematron.cit;
 
 import com.helger.commons.io.resource.ClassPathResource;
 import com.helger.commons.io.resource.IReadableResource;
-import com.helger.schematron.AbstractSchematronResource;
+import com.helger.schematron.ESchematronMode;
 import com.helger.schematron.pure.SchematronResourcePure;
 import com.helger.schematron.sch.SchematronResourceSCH;
-import com.helger.schematron.svrl.AbstractSVRLMessage;
-import com.helger.schematron.svrl.SVRLHelper;
+import com.helger.schematron.schxslt.xslt2.SchematronResourceSchXslt_XSLT2;
 import com.helger.schematron.svrl.SVRLMarshaller;
 import com.helger.schematron.svrl.jaxb.SchematronOutputType;
 
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
 
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.fail;
 
 /**
  * Test class for cross implementation tests
@@ -27,6 +23,7 @@ import static org.junit.Assert.fail;
  * @author Stefan Katzensteiner
  */
 public final class CrossImplementationTest {
+  private static final Logger LOGGER = LoggerFactory.getLogger (CrossImplementationTest.class);
   private static final String [] SCH = new String [] { "valid01.sch",
                                                        "valid02.sch",
                                                        "biicore/BIICORE-UBL-T01.sch",
@@ -39,8 +36,10 @@ public final class CrossImplementationTest {
                                                        "valid01.xml" };
 
   @Test
-  public void testCrossImplementationConsistencySimple () throws Exception {
+  public void testCrossImplementationConsistencySchPure () throws Exception {
     for (int i = 0; i < SCH.length; ++i) {
+
+      LOGGER.info("Schematron: " + SCH[i] + ", XML: " + XML[i]);
 
       String schPath = "external/test-sch/" + SCH[i];
       final IReadableResource aSchRes = new ClassPathResource(schPath);
@@ -50,68 +49,82 @@ public final class CrossImplementationTest {
       final IReadableResource aXmlRes = new ClassPathResource(xmlPath);
       assertTrue(aXmlRes.getPath(), aXmlRes.exists());
 
-      List<AbstractSVRLMessage> svrlMessageSchList =
-          validateAndExtractSVRLMessages(SchematronResourceSCH.fromClassPath(schPath), aXmlRes);
+      //schematron-sch
+      SchematronResourceSCH aSchematronSchRes = SchematronResourceSCH.fromClassPath(schPath);
+      assertTrue("invalid schematron", aSchematronSchRes.isValidSchematron());
 
-      List<AbstractSVRLMessage> svrlMessagePureList =
-          validateAndExtractSVRLMessages(SchematronResourcePure.fromClassPath(schPath), aXmlRes);
+      final Document aDocSch = aSchematronSchRes.applySchematronValidation(aXmlRes);
+      assertNotNull(aDocSch);
 
-      //Compare results
+      final SchematronOutputType aSVRLSch = new SVRLMarshaller().read(aDocSch);
+      assertNotNull(aSVRLSch);
 
-      if(svrlMessageSchList.size() != svrlMessagePureList.size()) {
-        fail("Number of AbstractSVRLMessages is not equal");
-      }
+      //schematron-pure
+      SchematronResourcePure aSchematronPureRes = SchematronResourcePure.fromClassPath(schPath);
+      assertTrue("invalid schematron", aSchematronPureRes.isValidSchematron());
 
-      for (AbstractSVRLMessage svrlMessageSch : svrlMessageSchList) {
-        boolean current = false;
-        for (AbstractSVRLMessage svrlMessagePure : svrlMessagePureList) {
-          current = isSimilarAbstractSVRLMessage(svrlMessageSch, svrlMessagePure);
-          if (current) {
-            break;
-          }
-        }
-        if (!current) {
-          fail("No matching AbstractSVRLMessage found!");
-        }
-      }
+      final Document aDocPure = aSchematronPureRes.applySchematronValidation(aXmlRes);
+      assertNotNull(aDocPure);
+
+      final SchematronOutputType aSVRLPure = new SVRLMarshaller().read(aDocPure);
+      assertNotNull(aSVRLPure);
+
+      //match
+      SVRLMatcher svrlMatcher1 = new SVRLMatcher(
+          ESchematronMode.SCHEMATRON,
+          ESchematronMode.PURE,
+          aSVRLSch,
+          aSVRLPure);
+
+      assertTrue(svrlMatcher1.isSimilarSchematronOutputType());
     }
   }
 
-  private List<AbstractSVRLMessage> validateAndExtractSVRLMessages(
-      AbstractSchematronResource aSchematronRes,
-      IReadableResource aXmlRes) throws Exception {
+  @Test
+  public void testCrossImplementationConsistencySchSchXslt () throws Exception {
+    for (int i = 0; i < SCH.length; ++i) {
 
-    assertTrue("invalid schematron", aSchematronRes.isValidSchematron());
+      LOGGER.info("Schematron: " + SCH[i] + ", XML: " + XML[i]);
 
-    final Document aDoc = aSchematronRes.applySchematronValidation(aXmlRes);
-    assertNotNull(aDoc);
+      String schPath = "external/test-sch/" + SCH[i];
+      final IReadableResource aSchRes = new ClassPathResource(schPath);
+      assertTrue(aSchRes.getPath(), aSchRes.exists());
 
-    final SchematronOutputType aSVRL = new SVRLMarshaller().read(aDoc);
-    assertNotNull(aSVRL);
+      String xmlPath = "external/test-xml/" + XML[i];
+      final IReadableResource aXmlRes = new ClassPathResource(xmlPath);
+      assertTrue(aXmlRes.getPath(), aXmlRes.exists());
 
-    List<AbstractSVRLMessage> svrlMessageList = new ArrayList<>();
-    svrlMessageList.addAll(SVRLHelper.getAllFailedAssertions(aSVRL));
-    svrlMessageList.addAll(SVRLHelper.getAllSuccessfulReports(aSVRL));
+      //schematron-sch
+      SchematronResourceSCH aSchematronSchRes = SchematronResourceSCH.fromClassPath(schPath);
+      assertTrue("invalid schematron", aSchematronSchRes.isValidSchematron());
 
-    return svrlMessageList;
-  }
+      final Document aDocSch = aSchematronSchRes.applySchematronValidation(aXmlRes);
+      assertNotNull(aDocSch);
 
-  /**
-   * Compare two AbstractSVRLMessages for similarity.
-   * <p>
-   * Note: location is not compared because SchematronResourceSCH and SchematronResourcePure
-   *       return the same location in different form.
-   *       /AAA[1] vs. /AAA
-   *       /*:Order[namespace-uri()='urn:oasis:names:specification:ubl:schema:xsd:Order-2'][1] vs. /ubl:Order
-   */
-  public static boolean isSimilarAbstractSVRLMessage(AbstractSVRLMessage asm1, AbstractSVRLMessage asm2) {
-    return Objects.equals(asm1.getDiagnisticReferences(), asm2.getDiagnisticReferences())
-           && Objects.equals(asm1.getText(), asm2.getText())
-           && Objects.equals(asm1.getID(), asm2.getID())
-           //&& Objects.equals(asm1Location, asm2.getLocation())
-           && Objects.equals(asm1.getTest(), asm2.getTest())
-           && Objects.equals(asm1.getRole(), asm2.getRole())
-           && Objects.equals(asm1.getFlag(), asm2.getFlag());
+      final SchematronOutputType aSVRLSch = new SVRLMarshaller().read(aDocSch);
+      assertNotNull(aSVRLSch);
+
+      //schematron-schxslt
+      SchematronResourceSchXslt_XSLT2
+          aSchematronSchXsltRes =
+          SchematronResourceSchXslt_XSLT2.fromClassPath(schPath);
+      assertTrue("invalid schematron", aSchematronSchXsltRes.isValidSchematron());
+
+      final Document aDocSchXslt = aSchematronSchXsltRes.applySchematronValidation(aXmlRes);
+      assertNotNull(aDocSchXslt);
+
+      final SchematronOutputType aSVRLSchXslt = new SVRLMarshaller().read(aDocSchXslt);
+      assertNotNull(aSVRLSchXslt);
+
+      //match
+      SVRLMatcher svrlMatcher2 = new SVRLMatcher(
+          ESchematronMode.SCHEMATRON,
+          ESchematronMode.SCHXSLT_XSLT2,
+          aSVRLSch,
+          aSVRLSchXslt);
+
+      assertTrue(svrlMatcher2.isSimilarSchematronOutputType());
+    }
   }
 
 }

@@ -10,33 +10,42 @@ import java.util.List;
 import java.util.Objects;
 
 //Eine kleine Klasse, die die beiden Ergebnisse (SVRL) aufnimmt - und auf der ich dann die Vergleiche fahren kann
-public class SVRLMatcher {
+public class SVRLMatcher implements ISVRLMatcher {
 
   //Dauer der Prüfung
   //Basierend auf den Daten nette HTML/XML Reports erstellen
   //"SVRLDelta" Klasse machen, die aus einem "SVRLMatcher" rauskommt und ein Set von Deltas enthält
 
-  private final ESchematronMode impl1;
-  private final ESchematronMode impl2;
-  private final SchematronOutputType svrl1;
-  private final SchematronOutputType svrl2;
+  private final ESchematronMode m_aImpl1;
+  private final ESchematronMode m_aImpl2;
+  private final SchematronOutputType m_aSvrl1;
+  private final SchematronOutputType m_aSvrl2;
 
-  public SVRLMatcher(ESchematronMode impl1, ESchematronMode impl2,
-                     SchematronOutputType svrl1, SchematronOutputType svrl2) {
-    this.impl1 = impl1;
-    this.impl2 = impl2;
-    this.svrl1 = svrl1;
-    this.svrl2 = svrl2;
+  public SVRLMatcher(ESchematronMode aImpl1, ESchematronMode aImpl2,
+                     SchematronOutputType aSvrl1, SchematronOutputType aSvrl2) {
+
+    if(aImpl1 != ESchematronMode.SCHEMATRON) {
+      throw new IllegalArgumentException("First argument must be ESchematronMode.SCHEMATRON!");
+    }
+    if(!(aImpl2 == ESchematronMode.PURE || aImpl2 == ESchematronMode.SCHXSLT_XSLT2)) {
+      throw new IllegalArgumentException("Second argument must be ESchematronMode.PURE or "
+                                         + "ESchematronMode.SCHXSLT_XSLT2!");
+    }
+
+    this.m_aImpl1 = aImpl1;
+    this.m_aImpl2 = aImpl2;
+    this.m_aSvrl1 = aSvrl1;
+    this.m_aSvrl2 = aSvrl2;
   }
 
   public boolean isSimilarSchematronOutputType() {
     List<AbstractSVRLMessage> svrlMessageListSvrl1= new ArrayList<>();
-    svrlMessageListSvrl1.addAll(SVRLHelper.getAllFailedAssertions(svrl1));
-    svrlMessageListSvrl1.addAll(SVRLHelper.getAllSuccessfulReports(svrl1));
+    svrlMessageListSvrl1.addAll(SVRLHelper.getAllFailedAssertions(m_aSvrl1));
+    svrlMessageListSvrl1.addAll(SVRLHelper.getAllSuccessfulReports(m_aSvrl1));
 
     List<AbstractSVRLMessage> svrlMessageListSvrl2= new ArrayList<>();
-    svrlMessageListSvrl2.addAll(SVRLHelper.getAllFailedAssertions(svrl2));
-    svrlMessageListSvrl2.addAll(SVRLHelper.getAllSuccessfulReports(svrl2));
+    svrlMessageListSvrl2.addAll(SVRLHelper.getAllFailedAssertions(m_aSvrl2));
+    svrlMessageListSvrl2.addAll(SVRLHelper.getAllSuccessfulReports(m_aSvrl2));
 
     if((svrlMessageListSvrl1.size() != svrlMessageListSvrl2.size())) {
       return false;
@@ -45,12 +54,12 @@ public class SVRLMatcher {
     for (AbstractSVRLMessage svrlMessage1 : svrlMessageListSvrl1) {
       boolean current = false;
       for (AbstractSVRLMessage svrlMessage2 : svrlMessageListSvrl2) {
-        if(impl2 == ESchematronMode.PURE) {
+        if(m_aImpl2 == ESchematronMode.PURE) {
           current = SVRLMatcher.isSimilarSchPureAbstractSVRLMessage(svrlMessage1, svrlMessage2);
-        } else if (impl2 == ESchematronMode.SCHXSLT_XSLT2) {
+        } else if (m_aImpl2 == ESchematronMode.SCHXSLT_XSLT2) {
           current = SVRLMatcher.isSimilarSchSchXsltAbstractSVRLMessage(svrlMessage1, svrlMessage2);
         } else {
-          throw new IllegalArgumentException("No isSimilar() implemented for ESchematronMode " + impl2);
+          throw new IllegalArgumentException("No isSimilar() implemented for ESchematronMode " + m_aImpl2);
         }
         if (current) {
           break;

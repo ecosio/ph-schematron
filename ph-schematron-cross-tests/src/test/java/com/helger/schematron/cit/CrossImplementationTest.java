@@ -41,6 +41,7 @@ public final class CrossImplementationTest {
 
       LOGGER.info("Schematron: " + SCH[i] + ", XML: " + XML[i]);
 
+      //prep
       String schPath = "external/test-sch/" + SCH[i];
       final IReadableResource aSchRes = new ClassPathResource(schPath);
       assertTrue(aSchRes.getPath(), aSchRes.exists());
@@ -70,13 +71,13 @@ public final class CrossImplementationTest {
       assertNotNull(aSVRLPure);
 
       //match
-      SVRLMatcher svrlMatcher1 = new SVRLMatcher(
+      ISVRLMatcher svrlMatcher = new SVRLMatcher(
           ESchematronMode.SCHEMATRON,
           ESchematronMode.PURE,
           aSVRLSch,
           aSVRLPure);
 
-      assertTrue(svrlMatcher1.isSimilarSchematronOutputType());
+      assertTrue(svrlMatcher.isSimilarSchematronOutputType());
     }
   }
 
@@ -86,6 +87,7 @@ public final class CrossImplementationTest {
 
       LOGGER.info("Schematron: " + SCH[i] + ", XML: " + XML[i]);
 
+      //prep
       String schPath = "external/test-sch/" + SCH[i];
       final IReadableResource aSchRes = new ClassPathResource(schPath);
       assertTrue(aSchRes.getPath(), aSchRes.exists());
@@ -105,8 +107,7 @@ public final class CrossImplementationTest {
       assertNotNull(aSVRLSch);
 
       //schematron-schxslt
-      SchematronResourceSchXslt_XSLT2
-          aSchematronSchXsltRes =
+      SchematronResourceSchXslt_XSLT2 aSchematronSchXsltRes =
           SchematronResourceSchXslt_XSLT2.fromClassPath(schPath);
       assertTrue("invalid schematron", aSchematronSchXsltRes.isValidSchematron());
 
@@ -117,13 +118,13 @@ public final class CrossImplementationTest {
       assertNotNull(aSVRLSchXslt);
 
       //match
-      SVRLMatcher svrlMatcher2 = new SVRLMatcher(
+      ISVRLMatcher svrlMatcher = new SVRLMatcher(
           ESchematronMode.SCHEMATRON,
           ESchematronMode.SCHXSLT_XSLT2,
           aSVRLSch,
           aSVRLSchXslt);
 
-      assertTrue(svrlMatcher2.isSimilarSchematronOutputType());
+      assertTrue(svrlMatcher.isSimilarSchematronOutputType());
     }
   }
 
